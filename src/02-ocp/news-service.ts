@@ -1,32 +1,33 @@
+import { HttpClient } from './http-client.interface';
 
 /**
- * VIOLACIÓN AL PRINCIPIO DE ABIERTO/CERRADO (OCP)
- * 
- * En este módulo de noticias de la reserva, el servicio depende directamente
- * de la librería externa 'axios'. Si quisiéramos usar 'fetch' u otra librería,
- * tendríamos que modificar este código interno.
+ * Interfaz que representa una noticia de la reserva biológica.
  */
-
-import axios from 'axios';
-
-export class NewsService {
-
-    // VIOLACIÓN: Dependencia rígida de axios.get()
-    // Si la API cambia o queremos cambiar de cliente HTTP, este código debe "abrirse" para modificación.
-    async getLatestNews() {
-        console.log('Obteniendo noticias de la reserva biológica...');
-        const resp = await axios.get('https://jsonplaceholder.typicode.com/posts');
-        return resp.data;
-    }
-
+interface NewsArticle {
+  readonly userId: number;
+  readonly id: number;
+  readonly title: string;
+  readonly body: string;
 }
 
-export class PhotosService {
+/**
+ * Servicio de noticias de la Reserva Ecológica.
+ *
+ * OCP aplicado: Recibe un HttpClient por inyección en el constructor.
+ * Si mañana se necesita cambiar de `fetch` a `axios` o a un mock para tests,
+ * se inyecta otra implementación SIN modificar esta clase.
+ *
+ * ANTES: Dependencia directa de `axios.get()` dentro del método.
+ * DESPUÉS: Depende de la abstracción `HttpClient`.
+ */
+export class NewsService {
 
-    async getGallery() {
-        // Otra violación repetida: si mañana axios desaparece, tenemos que buscar todos los archivos que lo usan.
-        const resp = await axios.get('https://jsonplaceholder.typicode.com/photos');
-        return resp.data;
-    }
+  constructor(private readonly httpClient: HttpClient) {}
 
+  async getLatestNews(): Promise<ReadonlyArray<NewsArticle>> {
+    console.log('Obteniendo noticias de la reserva biológica...');
+    return this.httpClient.get<NewsArticle[]>(
+      'https://jsonplaceholder.typicode.com/posts'
+    );
+  }
 }
